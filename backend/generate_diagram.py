@@ -2,92 +2,59 @@ import base64
 import urllib.request
 import os
 
-MERMAID_DIAGRAM = """graph TB
-    subgraph ClientLayer [Client Layer - React Client]
-        UI[Dashboard & Settings UI]
-        AB[AssistantBot Chat & Voice]
+MERMAID_DIAGRAM = """graph TD
+    subgraph Client [1. Client Layer - React Client]
+        UI[Dashboard & Settings Page]
+        AB[Voice & Chat Assistant Bot]
     end
 
-    subgraph APILayer [API Layer - FastAPI Routers]
-        AUTH[Auth Router]
-        WORK[Workflow Router]
-        PLUG[Plugins Router]
-        CONF[Config Router]
-        CHAT[Chatbot Router]
+    subgraph Gateway [2. API Gateway - FastAPI Routers]
+        API[App Routers: Auth, Config, Workflows, Plugins, Chatbot]
     end
 
-    subgraph CoreOrchestration [Core Orchestration Engine]
+    subgraph Engine [3. Orchestration Engine]
         WE[Workflow Engine]
-        REGA[Agent Registry]
-        REGC[Capability Registry]
-        REGT[Tool Registry]
+        REG[Registries: Agent, Capability & Tool]
     end
 
-    subgraph AI_Agents [Collaborative AI Agents]
-        PLAN[Planner Agent]
-        VAL[Validation Agent]
-        REFL[Reflection Agent]
-        REP[Report Generator]
-        HITL[HITL Approval Agent]
+    subgraph Execution [4. Execution Layer - Agents & Plugins]
+        AGENTS[Collaborative Agents: Planner, Validation, Reflection, Report]
+        PLUGINS[Domain Plugins: B2B Sales, HR, Custom Plugins]
     end
 
-    subgraph Plugins [Dynamic Domain Plugins]
-        B2B[B2B Sales Plugin]
-        HR[HR Recruitment Plugin]
-        GEN[Generic Domain Plugin]
+    subgraph Providers [5. Core Integration Providers]
+        LP[LLM Provider - Google Gemini]
+        DB[(Data Store - MongoDB Atlas)]
     end
 
-    subgraph Tools [Tool Executions Layer]
-        SCRAPE[Web Scraper Tool]
-        SCORE[ICP Scoring Engine]
-        EMAIL[Email Finder Tool]
-    end
-
-    subgraph LLMProvider [LLM Provider Layer]
-        LP[LLM Provider Abstraction]
-        GEM[Gemini Provider]
-    end
-
-    subgraph Database [Data Store]
-        DB[(MongoDB Database)]
-    end
-
-    UI --> AUTH
-    UI --> WORK
-    UI --> PLUG
-    UI --> CONF
-    AB --> CHAT
-
-    WORK --> WE
-    WE --> REGC
-    WE --> REGA
-    WE --> REGT
-
-    REGA --> PLAN
-    REGA --> VAL
-    REGA --> REFL
-    REGA --> REP
-    REGA --> HITL
-
-    PLUG --> B2B
-    PLUG --> HR
-    PLUG --> GEN
-
-    REGT --> SCRAPE
-    REGT --> SCORE
-    REGT --> EMAIL
-
-    PLAN --> LP
-    B2B --> LP
-    HR --> LP
-    REFL --> LP
-    CHAT --> LP
-    LP --> GEM
+    UI -->|JSON Requests| API
+    AB -->|Ask Context Query| API
     
-    WE --> DB
-    CHAT --> DB
-    B2B --> DB
-    HR --> DB"""
+    API -->|Init Execution| WE
+    WE -->|Resolve Capabilities| REG
+    
+    REG -->|Orchestrate| AGENTS
+    REG -->|Execute| PLUGINS
+    
+    AGENTS -->|Generate Prompts| LP
+    PLUGINS -->|Generate Prompts| LP
+    API -->|Query Context| LP
+    
+    WE -->|Store State / Results| DB
+    PLUGINS -->|Fetch/Write| DB
+    API -->|Fetch Context| DB
+
+    classDef client fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+    classDef gateway fill:#8b5cf6,stroke:#6d28d9,color:#fff;
+    classDef engine fill:#ec4899,stroke:#be185d,color:#fff;
+    classDef exec fill:#f59e0b,stroke:#d97706,color:#fff;
+    classDef provider fill:#10b981,stroke:#059669,color:#fff;
+
+    class UI,AB client;
+    class API gateway;
+    class WE,REG engine;
+    class AGENTS,PLUGINS exec;
+    class LP,DB provider;"""
 
 def generate_diagram_image():
     print("Encoding Mermaid diagram...")
@@ -106,7 +73,7 @@ def generate_diagram_image():
             url, 
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         )
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=15) as response:
             with open(output_path, "wb") as f:
                 f.write(response.read())
         print("Success! Clean architecture diagram PNG created successfully.")
