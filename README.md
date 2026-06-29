@@ -7,7 +7,8 @@ A modular, production-grade Multi-Agent AI Platform designed to dynamically plan
 ## 📽️ Submission Deliverables
 
 *   🎥 **[5-Minute Demo Video](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Showcasing Platform & B2B Lead Generation Use Case)
-*   🏗️ **[5-Minute Architecture Walkthrough](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Explaining design decisions, registries, and dynamic routing)
+*   🏗️ **[5-Minute Architecture Walkthrough](ARCHITECTURE_WALKTHROUGH.md)** (Step-by-step numbered guide explaining design decisions, registries, and dynamic routing)
+*   📐 **[Architecture Design Document](ARCHITECTURE.md)** (Full technical documentation with sequence diagrams and qualification formulas)
 *   💻 **[GitHub Repository Source Code](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Fully structured documentation & setup instructions)
 
 ---

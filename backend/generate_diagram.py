@@ -27,22 +27,22 @@ MERMAID_DIAGRAM = """graph TD
         DB[(Data Store - MongoDB Atlas)]
     end
 
-    UI -->|JSON Requests| API
-    AB -->|Ask Context Query| API
+    UI -->|"[1] User Query & Config"| API
+    API -->|"[2] Trigger Workflow"| WE
+    WE -->|"[3] Resolve Capabilities"| REG
     
-    API -->|Init Execution| WE
-    WE -->|Resolve Capabilities| REG
+    REG -->|"[4] Orchestrate Agents"| AGENTS
+    REG -->|"[5] Execute Tools"| PLUGINS
     
-    REG -->|Orchestrate| AGENTS
-    REG -->|Execute| PLUGINS
+    AGENTS -->|"[6] LLM Evaluation"| LP
+    PLUGINS -->|"[7] LLM Reasoning"| LP
     
-    AGENTS -->|Generate Prompts| LP
-    PLUGINS -->|Generate Prompts| LP
-    API -->|Query Context| LP
+    WE -->|"[8] Persist Execution State"| DB
+    PLUGINS -->|"[9] Write Matches"| DB
     
-    WE -->|Store State / Results| DB
-    PLUGINS -->|Fetch/Write| DB
-    API -->|Fetch Context| DB
+    AB -->|"[10] Ask Questions"| API
+    API -->|"[11] Fetch Contextual Lead Data"| DB
+    API -->|"[12] Contextual LLM Explain"| LP
 
     classDef client fill:#3b82f6,stroke:#1d4ed8,color:#fff;
     classDef gateway fill:#8b5cf6,stroke:#6d28d9,color:#fff;
