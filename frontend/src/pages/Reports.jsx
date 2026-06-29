@@ -1,0 +1,168 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function ReportModal({ report, onClose }) {
+  if (!report) return null;
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 800 }}>
+        <div className="modal-header">
+          <div className="modal-title">📄 System Report: {report.report_id}</div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {/* Metadata Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+            {[
+              ['Report ID', report.report_id],
+              ['Workflow ID', report.workflow_id?.slice(0, 12) + '...'],
+              ['Generated', report.generated_at ? new Date(report.generated_at).toLocaleString() : '-'],
+              ['Status', report.metadata?.status || 'completed'],
+            ].map(([label, val]) => (
+              <div key={label} style={{
+                background: 'var(--bg-input)', borderRadius: 8,
+                padding: '10px 14px', border: '1px solid var(--border-subtle)'
+              }}>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>{String(val)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* User Request */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>User Request</div>
+            <div className="code-block" style={{ fontSize: 13, color: 'var(--text-primary)' }}>{report.user_request}</div>
+          </div>
+
+          {/* Summary */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Executive Summary</div>
+            <div style={{ padding: '12px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 14 }}>
+              {report.summary}
+            </div>
+          </div>
+
+          {/* Details Tabs / Pre views */}
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Raw Report Data</div>
+            <div className="code-block" style={{ maxHeight: 300, overflow: 'auto' }}>
+              {JSON.stringify(report, null, 2)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Reports() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [reportsRes, workflowsRes] = await Promise.all([
+        axios.get('/api/reports/').catch(() => ({ data: [] })),
+        axios.get('/api/workflow/').catch(() => ({ data: [] })),
+      ]);
+
+      let list = Array.isArray(reportsRes.data) ? reportsRes.data : [];
+
+      // If empty, generate from completed workflows
+      if (list.length === 0 && Array.isArray(workflowsRes.data)) {
+        list = workflowsRes.data
+          .filter(wf => wf.status === 'completed' || wf.status === 'failed')
+          .map(wf => {
+            const total = wf.steps?.length ?? 0;
+            const ok = wf.steps?.filter(s => s.success).length ?? 0;
+            return {
+              report_id: `report_${wf.workflow_id?.slice(0, 8)}`,
+              workflow_id: wf.workflow_id,
+              generated_at: wf.completed_at || new Date().toISOString(),
+              user_request: wf.user_request,
+              summary: wf.status === 'completed' 
+                ? `✓ Workflow completed successfully. ${ok}/${total} steps succeeded.`
+                : `✗ Workflow failed. ${ok}/${total} steps succeeded.`,
+              metadata: {
+                total_steps: total,
+                successful_steps: ok,
+                execution_time: wf.execution_time || 'N/A',
+                status: wf.status,
+              }
+            };
+          });
+      }
+
+      setReports(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div className="fade-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Reports</h1>
+          <p className="page-subtitle">Structured reports generated by the multi-agent execution</p>
+        </div>
+        <button className="btn-secondary" onClick={load} style={{ gap: 6 }}>
+          {"\ud83d\udd04"} Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 64 }}>
+          <div className="spinner" style={{ margin: '0 auto', width: 32, height: 32 }} />
+          <div style={{ color: 'var(--text-muted)', marginTop: 16 }}>Loading reports...</div>
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">{"\ud83d\udcca"}</div>
+          <div className="empty-state-title">No reports available</div>
+          <div className="empty-state-text">Reports are automatically generated by the Report Generator Agent when a workflow completes.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+          {reports.map((rep, i) => (
+            <div key={i} className="glass-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 200 }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>{rep.report_id}</span>
+                  <span className={`badge ${rep.metadata?.status === 'completed' ? 'badge-success' : 'badge-error'}`}>
+                    {rep.metadata?.status || 'completed'}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, maxHeight: 40, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebKitLineClamp: 2, WebKitBoxOrient: 'vertical' }}>
+                  {rep.user_request}
+                </h3>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                  {rep.summary}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  {rep.generated_at ? new Date(rep.generated_at).toLocaleDateString() : '-'}
+                </span>
+                <button className="btn-primary" onClick={() => setSelected(rep)} style={{ padding: '6px 12px', fontSize: 12 }}>
+                  Open Report
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selected && <ReportModal report={selected} onClose={() => setSelected(null)} />}
+    </div>
+  );
+}

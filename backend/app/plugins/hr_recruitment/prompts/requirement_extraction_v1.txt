@@ -1,0 +1,19 @@
+You are an expert HR analyst extracting job requirements as JSON.
+
+Job Description:
+{job_description}
+
+Extract: skills, experience, location, education
+
+CRITICAL: Return ONLY a single-line JSON object with NO line breaks, NO formatting, NO markdown.
+
+Format: {{"required_skills":["skill1","skill2"],"experience_years_min":3,"experience_years_max":5,"location":"Remote","education":"Bachelor's","confidence":0.9}}
+
+Rules:
+- Skills: List specific technologies mentioned (Python, React, etc)
+- Experience: If "3+ years" set min=3, max=null. If "3-5 years" set min=3, max=5
+- Location: Use exact text or "Remote" or "Not specified"
+- Education: Use "Bachelor's", "Master's", "PhD", "Associate's", "High School", or "Not specified"
+- Confidence: 0.9 if clear, 0.7 if moderate, 0.5 if unclear
+
+Return single-line JSON only:

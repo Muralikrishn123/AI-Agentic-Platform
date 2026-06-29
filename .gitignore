@@ -1,0 +1,48 @@
+# Dependency directories
+node_modules/
+venv/
+.venv/
+env/
+ENV/
+node-v20/
+mingit/
+
+# Keep environment variables safe
+.env
+backend/.env
+frontend/.env
+
+# Python build and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+dist/
+build/
+*.egg-info/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+
+# IDE / System files
+.vscode/
+.idea/
+.gemini/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and databases
+logs/
+*.log
+*.db
+*.sqlite
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
