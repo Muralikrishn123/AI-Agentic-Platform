@@ -12,58 +12,69 @@ The platform uses a decoupled, registry-driven, multi-agent design. Rather than 
 
 ```mermaid
 graph TD
-    subgraph Client [1. Client Layer - React Client]
-        UI[Dashboard & Settings Page]
-        AB[Voice & Chat Assistant Bot]
+    subgraph Frontend [Frontend Layer - React Client]
+        Dashboard[B2B Orchestration Dashboard UI]
+        ChatbotUI[Clarification Chatbot UI]
     end
 
-    subgraph Gateway [2. API Gateway - FastAPI Routers]
-        API[App Routers: Auth, Config, Workflows, Plugins, Chatbot]
+    subgraph API [API Layer - FastAPI]
+        Gateway[FastAPI Gateway]
+        Endpoints["/planner (Run Pipeline)<br/>/feedback (Submit Feedback)<br/>/plugins (Manage Plugins)<br/>/chat (Recommendation Chat)"]
     end
 
-    subgraph Engine [3. Orchestration Engine]
-        WE[Workflow Engine]
-        REG[Registries: Agent, Capability & Tool]
+    subgraph Ingestion [Web Engineering Data Ingestion Pipeline]
+        Scraper["Scraper Runner<br/>(Playwright / Scrapy / Apify)"]
+        Signal["Signal Extractor<br/>(Job listings, News, Tech stacks)"]
+        Enrich["Data Enrichment<br/>(Clearbit / Apollo APIs)"]
     end
 
-    subgraph Execution [4. Execution Layer - Agents & Plugins]
-        AGENTS[Collaborative Agents: Planner, Validation, Reflection, Report]
-        PLUGINS[Domain Plugins: B2B Sales, HR, Custom Plugins]
+    subgraph Storage [Storage & Persistence Layer - Unstructured NoSQL Database]
+        ProspectDB[(Prospect Database<br/>enriched data)]
+        FeedbackMem[(Feedback Memory<br/>accepted/rejected logs)]
+        PluginsDB[(Plugins Database<br/>custom overrides)]
+        GlobalMem[(Global Memory Database<br/>thresholds)]
     end
 
-    subgraph Providers [5. Core Integration Providers]
-        LP[LLM Provider - Google Gemini]
-        DB[(Data Store - MongoDB Atlas)]
+    subgraph Orchestration [Orchestration Layer - Multi-Agent DAG]
+        Planner["1. Planner Agent (Gemini)"]
+        Search["2. Search Agent"]
+        Qualify["3. Qualification Agent"]
+        Recommend["4. Recommendation Agent (Gemini)"]
     end
 
-    UI -->|"[1] User Query & Config"| API
-    API -->|"[2] Trigger Workflow"| WE
-    WE -->|"[3] Resolve Capabilities"| REG
-    
-    REG -->|"[4] Orchestrate Agents"| AGENTS
-    REG -->|"[5] Execute Tools"| PLUGINS
-    
-    AGENTS -->|"[6] LLM Evaluation"| LP
-    PLUGINS -->|"[7] LLM Reasoning"| LP
-    
-    WE -->|"[8] Persist Execution State"| DB
-    PLUGINS -->|"[9] Write Matches"| DB
-    
-    AB -->|"[10] Ask Questions"| API
-    API -->|"[11] Fetch Contextual Lead Data"| DB
-    API -->|"[12] Contextual LLM Explain"| LP
+    Dashboard <-->|HTTP Requests| Gateway
+    ChatbotUI <-->|HTTP Requests| Gateway
+    Gateway <--> Endpoints
 
-    classDef client fill:#3b82f6,stroke:#1d4ed8,color:#fff;
-    classDef gateway fill:#8b5cf6,stroke:#6d28d9,color:#fff;
-    classDef engine fill:#ec4899,stroke:#be185d,color:#fff;
-    classDef exec fill:#f59e0b,stroke:#d97706,color:#fff;
-    classDef provider fill:#10b981,stroke:#059669,color:#fff;
+    Scraper --> Signal
+    Signal --> Enrich
+    Enrich -->|Bulk Upsert / Stream| ProspectDB
 
-    class UI,AB client;
-    class API gateway;
-    class WE,REG engine;
-    class AGENTS,PLUGINS exec;
-    class LP,DB provider;
+    Endpoints -->|Initial State| Planner
+    Planner -->|Domain & Signals| Search
+    Search -->|Matched Companies| Qualify
+    Qualify -->|Scored & Filtered Prospects| Recommend
+    Recommend -->|Outreach Campaigns| Endpoints
+
+    Endpoints -->|Post Feedback / Adjust Weights| FeedbackMem
+    Endpoints -->|CRUD Plugins| PluginsDB
+    Search -->|Dynamic Query| PluginsDB
+    Search -->|Fetch Enriched Data| ProspectDB
+    FeedbackMem -->|Syncs state & updates limits| GlobalMem
+    Qualify -->|Query Feedback & Thresholds| GlobalMem
+    Recommend -->|Query Feedback & Thresholds| GlobalMem
+
+    classDef frontend fill:#2563eb,stroke:#1d4ed8,color:#fff;
+    classDef api fill:#16a34a,stroke:#15803d,color:#fff;
+    classDef ingestion fill:#ea580c,stroke:#d97706,color:#fff;
+    classDef storage fill:#db2777,stroke:#be185d,color:#fff;
+    classDef orchestration fill:#9333ea,stroke:#7e22ce,color:#fff;
+
+    class Dashboard,ChatbotUI frontend;
+    class Gateway,Endpoints api;
+    class Scraper,Signal,Enrich ingestion;
+    class ProspectDB,FeedbackMem,PluginsDB,GlobalMem storage;
+    class Planner,Search,Qualify,Recommend orchestration;
 ```
 
 ---
