@@ -8,6 +8,8 @@ This document outlines the system architecture, component interactions, and key 
 
 The platform uses a decoupled, registry-driven, multi-agent design. Rather than hardcoding workflows, the system dynamically plans and routes queries using a central registry of agents, capabilities, and tools.
 
+![System Architecture](platform_architecture.png)
+
 ```mermaid
 graph TD
     subgraph Client [1. Client Layer - React Client]
