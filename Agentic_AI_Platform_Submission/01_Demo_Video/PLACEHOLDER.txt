@@ -1,2 +1,0 @@
-Place your 5-minute Demo.mp4 video file in this directory.
-Ensure it is strictly less than 5 MB.
