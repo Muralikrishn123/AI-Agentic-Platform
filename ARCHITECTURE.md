@@ -8,6 +8,8 @@ This document provides an exhaustive breakdown of the design decisions, componen
 
 The platform follows a decoupled, registry-driven, multi-agent design. Rather than hardcoding workflows, the system dynamically plans and routes queries using a central registry of agents and capabilities.
 
+![System Architecture](platform_architecture.png)
+
 ```mermaid
 graph TB
     subgraph Client Layer (Frontend React + Vite)

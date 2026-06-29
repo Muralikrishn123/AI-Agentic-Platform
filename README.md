@@ -86,6 +86,8 @@ The platform is designed to optimize **B2B Customer Discovery and Lead Qualifica
 
 ## 🧬 System Architecture Diagram
 
+![System Architecture](platform_architecture.png)
+
 ```
                  [ User Search Request ]
                            │
