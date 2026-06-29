@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import AssistantBot from './AssistantBot';
 
 const coreNav = [
   { to: '/dashboard', icon: '\u26a1', label: 'Dashboard' },
@@ -118,6 +119,7 @@ export default function Layout() {
       <main className="main-content" style={{ position: 'relative', zIndex: 1 }}>
         <Outlet />
       </main>
+      <AssistantBot />
     </div>
   );
 }

@@ -60,7 +60,7 @@ class GeminiProvider(LLMProvider):
                     is_daily_limit = "daily" in err_msg or "requestsperday" in err_msg or "limit: 20" in err_msg or "requests per day" in err_msg
                     
                     if is_daily_limit:
-                        print(f"❌ Daily Gemini API quota exceeded ({current_model_name}). Trying fallback model...")
+                        print(f"[Quota] Daily Gemini API quota exceeded ({current_model_name}). Trying fallback model...")
                         last_exception = e
                         break
                     
@@ -71,14 +71,14 @@ class GeminiProvider(LLMProvider):
                         if retry_match:
                             sleep_time = float(retry_match.group(1)) + 1.0
                             sleep_time = min(sleep_time, 10.0) # limit sleep to prevent timeout locks
-                            print(f"⚠️  Google requested backoff for {current_model_name}. Sleeping for {sleep_time}s...")
+                            print(f"[Backoff] Google requested backoff for {current_model_name}. Sleeping for {sleep_time}s...")
                         else:
                             sleep_time = backoff_seconds * attempt
-                            print(f"⚠️  Gemini rate limit hit for {current_model_name}. Attempt {attempt}/{max_attempts}. Sleeping for {sleep_time}s...")
+                            print(f"[Rate Limit] Gemini rate limit hit for {current_model_name}. Attempt {attempt}/{max_attempts}. Sleeping for {sleep_time}s...")
                         await asyncio.sleep(sleep_time)
                     else:
                         last_exception = e
-                        print(f"❌ Model {current_model_name} failed: {e}. Trying fallback...")
+                        print(f"[Error] Model {current_model_name} failed: {e}. Trying fallback...")
                         break # Break the attempt loop to try the next fallback model immediately
         
         if last_exception:

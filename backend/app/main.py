@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database.connection import connect_to_mongo, close_mongo_connection
-from app.api import auth, planner, workflow, plugins, reports, logs, hitl, config
+from app.api import auth, planner, workflow, plugins, reports, logs, hitl, config, chatbot
 from config.settings import settings
 
 # Import for registries
@@ -197,6 +197,7 @@ app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
 app.include_router(hitl.router, prefix="/api/hitl", tags=["HITL"])
 app.include_router(config.router, prefix="/api/config", tags=["Config"])
+app.include_router(chatbot.router, prefix="/api/chatbot", tags=["Chatbot"])
 
 
 @app.get("/")
