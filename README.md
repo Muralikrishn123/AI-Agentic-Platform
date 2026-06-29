@@ -4,7 +4,15 @@ A modular, production-grade Multi-Agent AI Platform designed to dynamically plan
 
 ---
 
-## 🌟 Key Features
+## 📽️ Submission Deliverables
+
+*   🎥 **[5-Minute Demo Video](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Showcasing Platform & B2B Lead Generation Use Case)
+*   🏗️ **[5-Minute Architecture Walkthrough](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Explaining design decisions, registries, and dynamic routing)
+*   💻 **[GitHub Repository Source Code](https://github.com/Muralikrishn123/AI-Agentic-Platform)** (Fully structured documentation & setup instructions)
+
+---
+
+## 🌟 Key Features & UX Innovation
 
 ### 1. Dynamic Planner & Capability-Based Routing
 The **Planner Agent** parses natural language queries (e.g., *"Find solar leads in Mumbai"*) and consults the **Capability Registry** to map steps dynamically. If a specialized domain plugin is installed and enabled, it routes the workflow there; otherwise, it executes a generic B2B pipeline fallback.
@@ -36,7 +44,47 @@ A persistent conversational helper embedded across the application:
 
 ---
 
-## 🧬 System Architecture
+## 🏗️ Platform Design & Architecture (70% Evaluation Weight)
+
+This platform implements an advanced multi-agent orchestration pattern built around core pillars of reusability, modularity, and human-in-the-loop state safety.
+
+### 1. Agent & Tool Registries
+Rather than tightly coupling agents to specific plugins, all agents and tools are registered in centralized registries. 
+*   **Reusability**: Tools (e.g., Search, Scraper, Email Finder) are registered as generic capabilities.
+*   **Extensibility**: Any new plugin can declare a dependency on a capability (like `contact_discovery`), allowing the platform to dynamically assign agents at runtime.
+
+### 2. Orchestration & State Memory
+*   **Orchestration Engine**: A state-machine based workflow engine executes planned sequences.
+*   **Execution Memory**: A centralized MongoDB collections schema keeps a persistent, immutable timeline of steps, input configurations, agent outputs, and system logs.
+*   **HITL (Human-in-the-Loop) Checkpoint**: Before completing contact discovery or sending outreach, the system can enforce a `pending` state, allowing administrators to review and approve matches via the **Approvals** page.
+
+### 3. Resiliency & Quota Management
+The LLM Provider layer implements a robust multi-model fallback list (`gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`) combined with dynamic backoff retry logic. If the daily API limit is hit, local heuristic fallbacks instantly take over to compile reports and suggest matches.
+
+---
+
+## 💼 Business Use Case & Outcomes (30% Evaluation Weight)
+
+The platform is designed to optimize **B2B Customer Discovery and Lead Qualification** across diverse enterprise verticals:
+
+### 1. Domain Modeling Examples
+*   **Solar Energy Vertical**:
+    *   *ICP config*: Target type `Factory/Industrial`, keywords `Rooftop, Net-Metering`.
+    *   *Custom requirements*: `Must have >10,000 sq ft roof space; must have high electricity expenditures`.
+*   **Healthcare Equipment Vertical**:
+    *   *ICP config*: Target type `Hospital`, size unit `beds` (range: `100 - 500`).
+    *   *Custom requirements*: `Must have active ICU department; must be upgrading diagnostic tools`.
+
+### 2. Customer Discovery Workflow
+1.  **Ingestion**: Natural language search query is mapped to a domain configuration.
+2.  **Entity Discovery**: Research agents scrape regional registries and web indexes to locate candidate organizations.
+3.  **Qualification Filtering**: Evaluates targets against the ICP criteria and custom requirements, grading prospects from `0% to 100%`.
+4.  **Enrichment**: Identifies decision-maker personas (e.g., *Head of Facilities*, *Chief Medical Officer*) and locates corporate emails.
+5.  **Outcomes**: The resulting CSV export maps directly into CRM pipelines (HubSpot, Salesforce) with custom matching rationales pre-populated.
+
+---
+
+## 🧬 System Architecture Diagram
 
 ```
                  [ User Search Request ]
@@ -75,35 +123,6 @@ A persistent conversational helper embedded across the application:
 *   **Frontend**: React 18, Vite, Vanilla CSS (Glassmorphism & Dark Mode styling), Axios, Web Speech API.
 *   **Backend**: Python 3.9+, FastAPI, Uvicorn, MongoDB (Atlas).
 *   **AI Integration**: Abstraction-layered LLM Provider using Google Gemini. Includes automatic retry/backoff wrappers.
-
----
-
-## 📂 Project Structure
-
-```
-agentic-platform/
-├── frontend/                 # React client
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Layout.jsx    # Application shell
-│   │   │   └── AssistantBot.jsx # Chat/Voice assistant widget
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx # Runner dashboard
-│   │   │   ├── Config.jsx    # Domain-agnostic settings
-│   │   │   ├── Plugins.jsx   # Custom domain builder
-│   │   │   ├── Results.jsx   # Animated loader & report view
-│   │   │   └── Approvals.jsx # Human-in-the-loop actions
-│   └── vite.config.js
-└── backend/                  # FastAPI server
-    ├── app/
-    │   ├── api/              # API endpoints (Auth, Config, Chatbot)
-    │   ├── core/             # Base Agents (Planner, Validation, Report)
-    │   ├── database/         # MongoDB connections & models
-    │   ├── plugins/          # Plugin modules (HR, Sales, Generic)
-    │   └── services/         # Registries (Agent, Capability, Tool)
-    ├── config/               # Settings & environment loads
-    └── run_backend.bat       # Startup utility script
-```
 
 ---
 
@@ -157,27 +176,6 @@ agentic-platform/
     npm run dev
     ```
     The client will start at `http://localhost:5173`.
-
----
-
-## 📝 Running Workflows (How to Use)
-
-### Step 1: Set Target Profile
-Go to the **ICP & Config** tab and configure target criteria (e.g. Set *Target Organization Types* to `Hospital`, *Keywords* to `Solar, Energy`, and *Size Unit* to `beds` with range `50 - 500`). Click **Save Configuration**.
-
-### Step 2: (Optional) Register Custom Plugin
-Go to the **Plugins** tab, click **+ Create Plugin**, name it `Solar Hospital Sales`, and add *Qualification Requirements* like `Must have open terrace space`. Click **Save**.
-
-### Step 3: Run the workflow
-Go to the **Dashboard**, choose **Auto-detect plugin**, enter your query:
-> *"Find hospitals in Mumbai looking to install solar panels."*
-
-Click **⚡ Start Workflow**.
-
-### Step 4: Track Progress & Chat
-*   Watch the animated pipeline check off each agent stage in real-time.
-*   Once finished, review the structured summary and matching cards.
-*   Click the **Assistant Bot** in the bottom-right, ask *"Why did IIT Bombay match?"*, and hear/read the explained qualification rationale!
 
 ---
 
