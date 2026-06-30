@@ -5,11 +5,8 @@ This repository contains the **Agentic AI Platform**, a reusable, modular multi-
 ---
 
 ## 👥 Team Details
-*   **Team Name**: [Insert Team Name]
-*   **Team Members**:
-    1. [Member 1 Name] - [Member 1 Role/Email]
-    2. [Member 2 Name] - [Member 2 Role/Email]
-*   **Submission Date**: Monday, 29 June 2026
+*   **Team Name**: AP&Ts
+
 
 ---
 
