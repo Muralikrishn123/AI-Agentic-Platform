@@ -21,7 +21,7 @@ const THINKING_MESSAGES = [
   "Almost there — finalizing your report...",
 ];
 
-function PipelineLoader({ userRequest }) {
+function PipelineLoader({ userRequest, steps = [] }) {
   const [activeStage, setActiveStage] = useState(0);
   const [completedStages, setCompletedStages] = useState([]);
   const [elapsed, setElapsed] = useState(0);
@@ -32,7 +32,10 @@ function PipelineLoader({ userRequest }) {
     const interval = setInterval(() => {
       setActiveStage(prev => {
         if (prev < PIPELINE_STAGES.length - 1) {
-          setCompletedStages(c => [...c, prev]);
+          setCompletedStages(c => {
+            if (c.includes(prev)) return c;
+            return [...c, prev];
+          });
           return prev + 1;
         }
         return prev;
@@ -40,6 +43,45 @@ function PipelineLoader({ userRequest }) {
     }, 8000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!steps || steps.length === 0) return;
+
+    const completed = [];
+    let active = 0;
+
+    const planningStep = steps.find(s => s.step === "planning" || s.agent === "PlannerAgent");
+    if (planningStep) {
+      completed.push(0);
+      active = 1;
+    }
+
+    const pluginStep = steps.find(s => s.step === "plugin_execution");
+    if (pluginStep) {
+      completed.push(1);
+      completed.push(2);
+      completed.push(3);
+      active = 4;
+    }
+
+    const validationStep = steps.find(s => s.step === "validation" || s.step === "reflection");
+    if (validationStep) {
+      completed.push(4);
+      active = 5;
+    }
+
+    const reportStep = steps.find(s => s.step === "ReportGenerator");
+    if (reportStep) {
+      completed.push(5);
+      active = 5;
+    }
+
+    setActiveStage(prev => Math.max(prev, active));
+    setCompletedStages(prev => {
+      const combined = Array.from(new Set([...prev, ...completed]));
+      return combined.sort((a, b) => a - b);
+    });
+  }, [steps]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -56,6 +98,24 @@ function PipelineLoader({ userRequest }) {
   }, []);
 
   const progressPct = Math.min(((activeStage + 1) / PIPELINE_STAGES.length) * 100, 95);
+
+  const NODES = [
+    { id: 0, x: 70, y: 130, label: "Planner Agent", icon: "🧠", desc: "Planner & Router" },
+    { id: 1, x: 210, y: 60, label: "Research Agent", icon: "🔍", desc: "Data Ingestion" },
+    { id: 2, x: 210, y: 200, label: "Qualification Agent", icon: "⚖️", desc: "Lead Scorer" },
+    { id: 3, x: 370, y: 60, label: "Contact Discovery", icon: "👤", desc: "Contact Finder" },
+    { id: 4, x: 370, y: 200, label: "Validation Agent", icon: "✅", desc: "Quality Validator" },
+    { id: 5, x: 510, y: 130, label: "Report Generator", icon: "📋", desc: "Report Writer" }
+  ];
+
+  const EDGES = [
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 1, to: 3 },
+    { from: 2, to: 4 },
+    { from: 3, to: 5 },
+    { from: 4, to: 5 }
+  ];
 
   return (
     <div className="fade-in" style={{ maxWidth: 640, margin: '40px auto', padding: '0 16px' }}>
@@ -103,7 +163,166 @@ function PipelineLoader({ userRequest }) {
         </div>
       </div>
 
-      {/* Stage Nodes */}
+      {/* SVG DAG Visualizer */}
+      <div className="glass-card" style={{ padding: 20, marginBottom: 20, overflow: 'visible' }}>
+        <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: 16 }}>
+          Agent Orchestration Graph (DAG)
+        </h3>
+        <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <svg width="100%" height="260" viewBox="0 0 600 260" style={{ minWidth: 540, overflow: 'visible' }}>
+            {/* Draw Edges */}
+            {EDGES.map((edge, idx) => {
+              const fromNode = NODES[edge.from];
+              const toNode = NODES[edge.to];
+              const isFromCompleted = completedStages.includes(edge.from);
+              const isFromActive = activeStage === edge.from;
+
+              let strokeColor = "var(--border-subtle)";
+              let strokeDash = "4 4";
+              let animationClass = "";
+
+              if (isFromCompleted) {
+                strokeColor = "var(--accent-emerald)";
+                strokeDash = "none";
+                animationClass = "edge-flow-done";
+              } else if (isFromActive) {
+                strokeColor = "var(--accent-primary)";
+                strokeDash = "6 6";
+                animationClass = "edge-flow-active";
+              }
+
+              return (
+                <g key={idx}>
+                  {(isFromCompleted || isFromActive) && (
+                    <line
+                      x1={fromNode.x}
+                      y1={fromNode.y}
+                      x2={toNode.x}
+                      y2={toNode.y}
+                      stroke={isFromCompleted ? "rgba(16, 185, 129, 0.25)" : "rgba(99, 102, 241, 0.25)"}
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                    />
+                  )}
+                  <line
+                    x1={fromNode.x}
+                    y1={fromNode.y}
+                    x2={toNode.x}
+                    y2={toNode.y}
+                    stroke={strokeColor}
+                    strokeWidth="2"
+                    strokeDasharray={strokeDash}
+                    strokeLinecap="round"
+                    className={animationClass}
+                    style={{ transition: 'all 0.5s ease' }}
+                  />
+                </g>
+              );
+            })}
+
+            {/* Draw Nodes */}
+            {NODES.map((node, i) => {
+              const isDone = completedStages.includes(i);
+              const isActive = activeStage === i;
+              const isPending = !isDone && !isActive;
+
+              let strokeColor = "var(--border-subtle)";
+              let fillColor = "var(--bg-input)";
+              let filter = "none";
+
+              if (isDone) {
+                strokeColor = "var(--accent-emerald)";
+                fillColor = "rgba(16, 185, 129, 0.12)";
+                filter = "drop-shadow(0 0 8px rgba(16, 185, 129, 0.3))";
+              } else if (isActive) {
+                strokeColor = "var(--accent-primary)";
+                fillColor = "rgba(99, 102, 241, 0.15)";
+                filter = "drop-shadow(0 0 12px rgba(99, 102, 241, 0.4))";
+              }
+
+              let labelY = node.y + 40;
+              let descY = node.y + 53;
+              if (node.y === 60) {
+                labelY = node.y - 25;
+                descY = node.y - 12;
+              }
+
+              return (
+                <g key={i} style={{ opacity: isPending ? 0.45 : 1, transition: 'all 0.5s ease' }}>
+                  {isActive && (
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      fill="none"
+                      stroke="var(--accent-primary)"
+                      strokeWidth="1.5"
+                      style={{
+                        animation: 'pulse-r 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite'
+                      }}
+                    />
+                  )}
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r="22"
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    style={{ filter, transition: 'all 0.5s ease' }}
+                  />
+                  <text
+                    x={node.x}
+                    y={node.y + 6}
+                    textAnchor="middle"
+                    fontSize="17"
+                    style={{ userSelect: 'none', pointerEvents: 'none' }}
+                  >
+                    {node.icon}
+                  </text>
+                  {isDone && (
+                    <g>
+                      <circle cx={node.x + 15} cy={node.y - 15} r="7" fill="var(--accent-emerald)" />
+                      <text x={node.x + 15} y={node.y - 12} textAnchor="middle" fontSize="8" fill="#fff" fontWeight="900">✓</text>
+                    </g>
+                  )}
+                  {isActive && (
+                    <circle
+                      cx={node.x + 15}
+                      cy={node.y - 15}
+                      r="4.5"
+                      fill="var(--accent-primary)"
+                      style={{ animation: 'blink 1s infinite' }}
+                    />
+                  )}
+                  <text
+                    x={node.x}
+                    y={labelY}
+                    textAnchor="middle"
+                    fill={isDone ? "var(--accent-emerald)" : isActive ? "var(--text-primary)" : "var(--text-muted)"}
+                    fontSize="11.5"
+                    fontWeight="800"
+                    style={{ transition: 'fill 0.5s ease', fontFamily: 'system-ui, sans-serif' }}
+                  >
+                    {node.label}
+                  </text>
+                  <text
+                    x={node.x}
+                    y={descY}
+                    textAnchor="middle"
+                    fill="var(--text-muted)"
+                    fontSize="9"
+                    style={{ fontFamily: 'system-ui, sans-serif' }}
+                  >
+                    {isActive ? "Active" : isDone ? "Done" : "Queued"}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Stage Nodes Log List */}
       <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {PIPELINE_STAGES.map((stage, i) => {
@@ -181,7 +400,23 @@ function PipelineLoader({ userRequest }) {
           70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
           100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
         }
+        @keyframes pulse-r {
+          0% { r: 22px; opacity: 1; }
+          100% { r: 35px; opacity: 0; }
+        }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes dash-flow {
+          to {
+            stroke-dashoffset: -20;
+          }
+        }
+        .edge-flow-active {
+          animation: dash-flow 0.8s linear infinite;
+        }
+        .edge-flow-done {
+          stroke-dasharray: 5 15;
+          animation: dash-flow 1.5s linear infinite;
+        }
       `}</style>
     </div>
   );
@@ -252,7 +487,7 @@ export default function Results() {
   const isRunning = !fetchError && (!result || !['completed', 'failed', 'error'].includes(result?.status));
 
   if (isRunning) {
-    return <PipelineLoader userRequest={userRequest} />;
+    return <PipelineLoader userRequest={userRequest} steps={result?.steps || []} />;
   }
 
   if (!result || fetchError) {
