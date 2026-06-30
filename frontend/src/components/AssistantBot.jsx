@@ -49,6 +49,17 @@ export default function AssistantBot() {
       rec.onerror = (e) => {
         console.error('Speech recognition error:', e);
         setIsListening(false);
+        if (e.error === 'not-allowed') {
+          setMessages(prev => [
+            ...prev,
+            { sender: 'bot', text: '🎤 Microphone access was blocked. Please enable microphone permissions in your browser address bar settings to use voice input.', timestamp: new Date() }
+          ]);
+        } else if (e.error === 'network') {
+          setMessages(prev => [
+            ...prev,
+            { sender: 'bot', text: '⚠️ Speech recognition network error. Please check your internet connection.', timestamp: new Date() }
+          ]);
+        }
       };
 
       rec.onend = () => {
@@ -255,8 +266,8 @@ export default function AssistantBot() {
                     background: isBot ? 'var(--bg-input)' : 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
                     color: isBot ? 'var(--text-secondary)' : '#fff',
                     border: isBot ? '1px solid var(--border-subtle)' : 'none',
-                    borderRadiusTopLeft: isBot ? 2 : 12,
-                    borderRadiusTopRight: isBot ? 12 : 2,
+                    borderTopLeftRadius: isBot ? 2 : 12,
+                    borderTopRightRadius: isBot ? 12 : 2,
                     whiteSpace: 'pre-wrap'
                   }}>
                     {m.text}
